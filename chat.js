@@ -68,7 +68,9 @@
           recognition.start();
           recognition.onresult = (event) => {
           const speechToText = event.results[0][0].transcript;
-      }
+            }
+        }
+    }
 
         loadImage = function (text) {
             sendMessage(text);
@@ -94,16 +96,54 @@
             apigClient.searchGet(params, body, additionalParams)
                 .then(function(result){
 
-                  console.log(result.data)
-                  var2 = result.data;
-                  sendMessage(var2);
+                  // console.log(result.data)
+                  // var2 = result.data;
+                  console.log(result);
+                  console.log(result.data.results.length)
 
-                }).catch( function(result){
-                  // Add error callback code here.
-                  console.log("error");
-                });
+                  // sendMessage(var2);
+
+                  var i;
+          				if(result["data"]["results"].length == 0){
+          				img_home.innerHTML = '<div style="color:red; font-size:26px; font-weight:bold; font-style: italic;"  align="center"> Sorry! There are no images with the above content in your gallery</div>';
+          				}
+          				else{
+          				for (i = 0; i < result["data"]["results"].length; i++) {
+                    console.log("inside for");
+                    var img1 = new Image();
+          					img1.width = "300";
+          					img1.height = "300";
+                    labels = result["data"]["results"][i]["labels"]
+                         console.log("labels yeh")
+                         console.log(labels);
+                         url = result["data"]["results"][i]["url"]
+                         console.log(url);
+
+                         console.log("url hai yeh")
+          					var temp = result["data"]["results"][i];
+          					console.log(temp);
+          					img1.src =  url;
+                    // // img.src = "http://publicaccessbucket1.s3-website-us-east-1.amazonaws.com"+temp;
+                    var div_img = document.getElementById("img_home");
+                    div_img.appendChild(img1);
+
+          				}
+        //
+          				}
+          				// console.log(result)
+          			}).catch( function(result){
+          				//This is where you would put an error callback
+          				console.log("Fails to send searchGet request");
+          			});
+
+                // }).catch( function(result){
+                //   // Add error callback code here.
+                //   console.log("error");
+                // });
 
         };
+
+
 
         uploadImage = function (text) {
             sendMessage(text);
@@ -112,7 +152,9 @@
             var type = file.type
             var params = {
               'filename' : filename,
-              'Content-Type' :type
+              'Content-Type':'text/plain',
+              'Accept':'img/png'
+
             }
             var additionalParams = {
                 headers: {
@@ -120,32 +162,55 @@
                }
             }
             console.log(type);
-           
-            console.log(filename)
 
-            var apigClient = apigClientFactory.newClient();
+            console.log(filename);
+            console.log("invokeurl")
+            var invokeUrl_str="https://fl8inowho4.execute-api.us-east-1.amazonaws.com/aakhriDinwala/upload/" + filename;
+              console.log("https://fl8inowho4.execute-api.us-east-1.amazonaws.com/aakhriDinwala/upload/" + filename);
+            var apigClient = apigClientFactory.newClient({
+              invokeUrl:invokeUrl_str,
+              apiKey: '',// REQUIRED
+              region: 'us-east-1' // REQUIRED
+            }
+            );
+
             console.log(file);
             // var body = file.replace(/^data:image\/[a-z]+;base64,/, "");
 
+            var body;
+            var reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.addEventListener("load", function() {
+              console.log("inside load");
+              ImageURL = reader.result;
+              console.log("ImageURL");
+              console.log(ImageURL);
 
-            // var reader = new FileReader();
-            // reader.onloadend = function() {
-            //     body = reader.result;
-            //   }
-            // reader.readAsDataURL(file);
-            var body = encodeImageFileAsURL(document.getElementById('file'));
-            console.log(body);
 
-            apigClient.uploadPut(params, body, additionalParams)
-                .then(function(result){
 
-                  console.log("Success!")
-                
+              var block = ImageURL.split(";");
+              console.log("block yeh");
+              console.log(block);
 
-                }).catch( function(result){
-                  // Add error callback code here.
-                  console.log("error");
-                });
+              body = block[1].split(",")[1];
+              // body = atob(splittedBody);
+              // console.log("splittedBody");
+              // console.log(splittedBody);
+              console.log("body")
+              console.log(body);
+
+              apigClient.uploadPut(params, body, additionalParams)
+                  .then(function(result){
+
+                    console.log("Success!")
+
+                  }).catch( function(result){
+                    // Add error callback code here.
+
+                    console.log("error");
+                    console.log(result);
+                  });
+            })
         };
 
         $('.search_image').click(function (e) {
